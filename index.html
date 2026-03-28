@@ -3,37 +3,428 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-    <title>Orienteering GPS Tracker + Kompas</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
+    <title>Orienteering GPS</title>
     <style>
-        body { font-family: system-ui, sans-serif; margin: 0; padding: 10px; background: #121212; color: #fff; }
-        .controls { background: #1e1e1e; padding: 15px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-        input, button { margin: 5px 0; padding: 10px; width: 100%; box-sizing: border-box; border-radius: 4px; border: 1px solid #333; background: #2a2a2a; color: white; }
-        button { background: #007bff; border: none; font-weight: bold; cursor: pointer; transition: background 0.2s; }
-        button:active { background: #0056b3; }
-        .btn-success { background: #28a745; }
-        .btn-warning { background: #ffc107; color: #000; }
-        .btn-secondary { background: #6c757d; }
-        .flex-row { display: flex; gap: 10px; }
+        :root {
+            --bg-color: #121212;
+            --panel-bg: #1e1e1e;
+            --primary: #0a84ff;
+            --success: #30d158;
+            --warning: #ffd60a;
+            --text-main: #f5f5f7;
+            --text-muted: #86868b;
+            --border: #333336;
+        }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            background: var(--bg-color); 
+            color: var(--text-main); 
+            display: flex; 
+            flex-direction: column; 
+            min-height: 100vh; 
+        }
+
+        header {
+            background: #000;
+            padding: 15px 20px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        main {
+            flex: 1;
+            padding: 15px;
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .card { 
+            background: var(--panel-bg); 
+            padding: 20px; 
+            border-radius: 16px; 
+            margin-bottom: 20px; 
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4); 
+            border: 1px solid var(--border);
+        }
+
+        h3 { margin-top: 0; margin-bottom: 10px; font-size: 1.1rem; color: #fff; }
+        p.help-text { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px; line-height: 1.4; }
+
+        input[type="text"], input[type="file"] { 
+            width: 100%; 
+            padding: 12px; 
+            margin-bottom: 12px; 
+            box-sizing: border-box; 
+            border-radius: 10px; 
+            border: 1px solid var(--border); 
+            background: #2a2a2c; 
+            color: white; 
+            font-size: 1rem;
+        }
         
-        .map-container { position: relative; display: inline-block; max-width: 100%; border: 2px solid #333; overflow: hidden; background: #000; }
-        #mapImage { display: block; max-width: 100%; height: auto; transform-origin: top left; }
+        input[type="file"] { padding: 8px; }
+
+        button { 
+            width: 100%;
+            padding: 14px; 
+            border-radius: 12px; 
+            border: none; 
+            font-size: 1rem;
+            font-weight: 600; 
+            cursor: pointer; 
+            transition: transform 0.1s ease, filter 0.2s; 
+            color: white;
+            margin-bottom: 10px;
+        }
+        
+        button:active { transform: scale(0.97); filter: brightness(0.9); }
+        
+        .btn-primary { background: var(--primary); }
+        .btn-success { background: var(--success); color: #000; }
+        .btn-warning { background: var(--warning); color: #000; }
+        .btn-secondary { background: #48484a; }
+        
+        .flex-row { display: flex; gap: 10px; margin-bottom: 15px; }
+        .flex-row button { margin-bottom: 0; }
+
+        .map-container { 
+            position: relative; 
+            display: inline-block; 
+            width: 100%; 
+            border: 2px solid var(--border); 
+            border-radius: 12px;
+            overflow: hidden; 
+            background: #000; 
+        }
+        
+        #mapImage { display: block; width: 100%; height: auto; transform-origin: top left; }
         
         /* Znacznik pozycji ze strzałką kompasu */
         #marker {
             position: absolute;
-            width: 16px; height: 16px;
-            background-color: #ff0044;
-            border: 2px solid white;
+            width: 18px; height: 18px;
+            background-color: #ff375f;
+            border: 3px solid white;
             border-radius: 50%;
             transform: translate(-50%, -50%);
             display: none;
-            box-shadow: 0 0 10px rgba(255,0,68,0.8);
+            box-shadow: 0 0 15px rgba(255, 55, 95, 0.9);
             z-index: 10;
         }
         #compass-arrow {
             position: absolute;
-            top: -14px;
+            top: -18px;
             left: 50%;
+            margin-left: -8px;
+            width: 0; height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-bottom: 16px solid var(--warning);
+            transform-origin: 8px 27px;
+            transition: transform 0.1s ease-out;
+            filter: drop-shadow(0 0 4px rgba(0,0,0,0.8));
+        }
+
+        .calibration-point {
+            position: absolute; width: 14px; height: 14px; background: var(--success); 
+            border-radius: 50%; transform: translate(-50%, -50%); 
+            border: 2px solid #000; box-shadow: 0 0 8px rgba(48, 209, 88, 0.8);
+        }
+
+        #status {
+            padding: 12px;
+            border-radius: 10px;
+            background: rgba(255, 214, 10, 0.1);
+            color: var(--warning);
+            font-size: 0.9rem;
+            text-align: center;
+            border: 1px solid rgba(255, 214, 10, 0.3);
+            margin-top: 5px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 15px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border);
+            margin-top: auto;
+            background: #000;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🧭 Orienteering GPS</h1>
+    </header>
+
+    <main>
+        <div class="card">
+            <div class="flex-row" id="storageControls">
+                <button id="saveBtn" class="btn-warning" style="display:none;">💾 Zapisz</button>
+                <button id="loadBtn" class="btn-secondary" style="display:none;">📂 Wczytaj</button>
+            </div>
+
+            <h3>1. Wgraj mapę</h3>
+            <input type="file" id="imageInput" accept="image/*">
+            
+            <div id="calibrationSection">
+                <h3 style="margin-top: 15px;">2. Kalibracja</h3>
+                <p class="help-text">Kliknij na mapę 2 razy. Dla każdego punktu podaj współrzędne (Lat, Lon).</p>
+                <div id="calib1" style="display:none;">
+                    <input type="text" id="coord1" placeholder="Punkt 1 (np. 52.2297, 21.0122)">
+                </div>
+                <div id="calib2" style="display:none;">
+                    <input type="text" id="coord2" placeholder="Punkt 2 (np. 52.2305, 21.0150)">
+                </div>
+            </div>
+            
+            <button id="startGpsBtn" class="btn-success" style="display:none; margin-top: 10px;">📍 Start GPS & Kompas</button>
+            <div id="status">Wgraj mapę, aby rozpocząć.</div>
+        </div>
+
+        <div class="map-container" id="mapContainer">
+            <img id="mapImage" style="display:none;">
+            <div id="marker"><div id="compass-arrow"></div></div>
+        </div>
+    </main>
+
+    <footer>
+        Wersja: 1.0.0 | Ostatnia akt: 29.03.2026
+    </footer>
+
+    <script>
+        const imageInput = document.getElementById('imageInput');
+        const mapImage = document.getElementById('mapImage');
+        const mapContainer = document.getElementById('mapContainer');
+        const marker = document.getElementById('marker');
+        const compassArrow = document.getElementById('compass-arrow');
+        const statusDiv = document.getElementById('status');
+        
+        let calibPoints = [];
+        let watchId = null;
+
+        window.onload = () => {
+            if (localStorage.getItem('orient_map_data')) {
+                document.getElementById('loadBtn').style.display = 'block';
+            }
+        };
+
+        imageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => setupMap(event.target.result);
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function setupMap(imgData) {
+            mapImage.src = imgData;
+            mapImage.style.display = 'block';
+            calibPoints = []; 
+            document.querySelectorAll('.calibration-point').forEach(e => e.remove());
+            document.getElementById('calib1').style.display = 'none';
+            document.getElementById('calib2').style.display = 'none';
+            document.getElementById('startGpsBtn').style.display = 'none';
+            document.getElementById('saveBtn').style.display = 'none';
+            marker.style.display = 'none';
+            statusDiv.innerText = "Kliknij na mapie, aby wyznaczyć Punkt 1.";
+        }
+
+        document.getElementById('saveBtn').addEventListener('click', () => {
+            try {
+                calibPoints[0].lat = parseFloat(document.getElementById('coord1').value.split(',')[0]);
+                calibPoints[0].lon = parseFloat(document.getElementById('coord1').value.split(',')[1]);
+                calibPoints[1].lat = parseFloat(document.getElementById('coord2').value.split(',')[0]);
+                calibPoints[1].lon = parseFloat(document.getElementById('coord2').value.split(',')[1]);
+
+                const dataToSave = {
+                    image: mapImage.src,
+                    points: calibPoints,
+                    coord1Val: document.getElementById('coord1').value,
+                    coord2Val: document.getElementById('coord2').value
+                };
+                localStorage.setItem('orient_map_data', JSON.stringify(dataToSave));
+                alert("Konfiguracja zapisana pomyślnie!");
+                document.getElementById('loadBtn').style.display = 'block';
+            } catch (e) {
+                alert("Błąd zapisu! Sprawdź współrzędne lub rozmiar zdjęcia.");
+            }
+        });
+
+        document.getElementById('loadBtn').addEventListener('click', () => {
+            const data = JSON.parse(localStorage.getItem('orient_map_data'));
+            if (data) {
+                setupMap(data.image);
+                calibPoints = data.points;
+                
+                document.getElementById('calib1').style.display = 'block';
+                document.getElementById('calib2').style.display = 'block';
+                document.getElementById('coord1').value = data.coord1Val;
+                document.getElementById('coord2').value = data.coord2Val;
+                
+                setTimeout(() => {
+                    const rect = mapImage.getBoundingClientRect();
+                    const scaleX = rect.width / mapImage.naturalWidth;
+                    const scaleY = rect.height / mapImage.naturalHeight;
+                    
+                    calibPoints.forEach(p => {
+                        const pt = document.createElement('div');
+                        pt.className = 'calibration-point';
+                        pt.style.left = (p.x * scaleX) + 'px';
+                        pt.style.top = (p.y * scaleY) + 'px';
+                        mapContainer.appendChild(pt);
+                    });
+                }, 100);
+
+                document.getElementById('startGpsBtn').style.display = 'block';
+                document.getElementById('saveBtn').style.display = 'block';
+                statusDiv.innerText = "Wczytano zapis! Możesz uruchomić GPS.";
+            }
+        });
+
+        mapImage.addEventListener('click', (e) => {
+            if (calibPoints.length >= 2) return;
+
+            const rect = mapImage.getBoundingClientRect();
+            const scaleX = mapImage.naturalWidth / rect.width;
+            const scaleY = mapImage.naturalHeight / rect.height;
+            
+            const x = (e.clientX - rect.left) * scaleX;
+            const y = (e.clientY - rect.top) * scaleY;
+
+            calibPoints.push({ x, y, lat: 0, lon: 0 });
+            
+            const pt = document.createElement('div');
+            pt.className = 'calibration-point';
+            pt.style.left = (e.clientX - rect.left) + 'px';
+            pt.style.top = (e.clientY - rect.top) + 'px';
+            mapContainer.appendChild(pt);
+
+            const pointIndex = calibPoints.length;
+            document.getElementById(`calib${pointIndex}`).style.display = 'block';
+            
+            statusDiv.innerText = pointIndex === 1 
+                ? "Podaj współrzędne Punktu 1, a następnie kliknij Punkt 2 na mapie." 
+                : "Podaj współrzędne Punktu 2 i uruchom GPS.";
+
+            if (calibPoints.length === 2) {
+                document.getElementById('startGpsBtn').style.display = 'block';
+                document.getElementById('saveBtn').style.display = 'block';
+            }
+        });
+
+        document.getElementById('startGpsBtn').addEventListener('click', () => {
+            const parseCoords = (val) => val.split(',').map(v => parseFloat(v.trim()));
+            try {
+                const [lat1, lon1] = parseCoords(document.getElementById('coord1').value);
+                const [lat2, lon2] = parseCoords(document.getElementById('coord2').value);
+                
+                calibPoints[0].lat = lat1; calibPoints[0].lon = lon1;
+                calibPoints[1].lat = lat2; calibPoints[1].lon = lon2;
+                if (calibPoints.some(p => isNaN(p.lat) || isNaN(p.lon))) throw new Error();
+            } catch (err) {
+                alert("Błędny format! Użyj: Szerokość, Długość (np. 52.22, 21.01)");
+                return;
+            }
+
+            statusDiv.innerText = "Szukam sygnału GPS...";
+
+            if (navigator.geolocation) {
+                if (watchId) navigator.geolocation.clearWatch(watchId);
+                watchId = navigator.geolocation.watchPosition(updatePosition, handleError, {
+                    enableHighAccuracy: true, maximumAge: 0, timeout: 5000
+                });
+            } else {
+                statusDiv.innerText = "GPS nie jest wspierany.";
+            }
+
+            initCompass();
+        });
+
+        function initCompass() {
+            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission()
+                    .then(permissionState => {
+                        if (permissionState === 'granted') {
+                            window.addEventListener('deviceorientation', handleOrientation);
+                        } else {
+                            statusDiv.innerText = "Brak zgody na kompas.";
+                        }
+                    }).catch(console.error);
+            } else {
+                window.addEventListener('deviceorientationabsolute', handleOrientation);
+                window.addEventListener('deviceorientation', handleOrientation);
+            }
+        }
+
+        function handleOrientation(event) {
+            let heading = null;
+            if (event.webkitCompassHeading) {
+                heading = event.webkitCompassHeading;
+            } else if (event.absolute === true || event.alpha !== null) {
+                heading = 360 - event.alpha; 
+            }
+            if (heading !== null) {
+                compassArrow.style.transform = `rotate(${heading}deg)`;
+            }
+        }
+
+        function updatePosition(position) {
+            const currentLat = position.coords.latitude;
+            const currentLon = position.coords.longitude;
+            statusDiv.innerHTML = `GPS OK: ${currentLat.toFixed(5)}, ${currentLon.toFixed(5)}<br><small>Dokładność: ±${position.coords.accuracy.toFixed(0)}m</small>`;
+
+            const p1 = calibPoints[0];
+            const p2 = calibPoints[1];
+
+            const dLat = p2.lat - p1.lat;
+            const dLon = p2.lon - p1.lon;
+            const dx = p2.x - p1.x;
+            const dy = p2.y - p1.y;
+
+            let currentX = p1.x + ((currentLon - p1.lon) / dLon) * dx;
+            let currentY = p1.y + ((currentLat - p1.lat) / dLat) * dy;
+
+            const rect = mapImage.getBoundingClientRect();
+            const cssX = currentX / (mapImage.naturalWidth / rect.width);
+            const cssY = currentY / (mapImage.naturalHeight / rect.height);
+
+            marker.style.left = cssX + 'px';
+            marker.style.top = cssY + 'px';
+            marker.style.display = 'block';
+        }
+
+        function handleError(error) {
+            statusDiv.innerText = `Błąd GPS: ${error.message}`;
+        }
+    </script>
+</body>
+</html>
             margin-left: -6px;
             width: 0; height: 0;
             border-left: 6px solid transparent;
